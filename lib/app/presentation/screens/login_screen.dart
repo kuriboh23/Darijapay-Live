@@ -1,6 +1,7 @@
 // lib/app/presentation/screens/login_screen.dart
 import 'package:darijapay_live/app/config/theme.dart';
 import 'package:darijapay_live/app/presentation/screens/signup_screen.dart'; // Will create soon
+import 'package:darijapay_live/app/services/auth_service.dart';
 import 'package:flutter/material.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -14,11 +15,35 @@ class _LoginScreenState extends State<LoginScreen> {
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
 
+  final AuthService _authService = AuthService(); // Create an instance
+  bool _isLoading = false;
+
   @override
   void dispose() {
     _emailController.dispose();
     _passwordController.dispose();
     super.dispose();
+  }
+
+   // --- LOGIN LOGIC ---
+  void _login() async {
+    setState(() => _isLoading = true);
+    final result = await _authService.signInWithEmailAndPassword(
+      _emailController.text.trim(),
+      _passwordController.text.trim(),
+    );
+
+    // Handle login failure
+    if (result == null && mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Login failed. Please check your credentials.')),
+      );
+    }
+    // The AuthGate will handle navigation on success.
+    // We just need to stop the loading indicator.
+    if (mounted) {
+      setState(() => _isLoading = false);
+    }
   }
 
   @override
@@ -64,17 +89,15 @@ class _LoginScreenState extends State<LoginScreen> {
                 const SizedBox(height: 26),
 
                 ElevatedButton(
-                  onPressed: () {
-                    /* Login logic will go here */
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppTheme.primaryAccent,
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(14),
-                    ),
-                  ),
-                  child: const Text(
+                  onPressed: _isLoading ? null : _login, // Call the login function
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppTheme.primaryAccent,
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                ),
+                child: _isLoading
+                    ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                    : const Text(
                     'Login',
                     style: TextStyle(
                       color: AppTheme.textHeadings,

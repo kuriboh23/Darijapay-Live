@@ -1,5 +1,6 @@
 // lib/app/presentation/screens/signup_screen.dart
 import 'package:darijapay_live/app/config/theme.dart';
+import 'package:darijapay_live/app/services/auth_service.dart';
 import 'package:flutter/material.dart';
 
 class SignUpScreen extends StatefulWidget {
@@ -12,8 +13,9 @@ class SignUpScreen extends StatefulWidget {
 class _SignUpScreenState extends State<SignUpScreen> {
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
-  final TextEditingController _confirmPasswordController =
-      TextEditingController();
+  final TextEditingController _confirmPasswordController = TextEditingController();
+  final AuthService _authService = AuthService(); // Create an instance
+  bool _isLoading = false;
 
   @override
   void dispose() {
@@ -21,6 +23,36 @@ class _SignUpScreenState extends State<SignUpScreen> {
     _passwordController.dispose();
     _confirmPasswordController.dispose();
     super.dispose();
+  }
+
+   // --- SIGN UP LOGIC ---
+  void _signUp() async {
+    if (_passwordController.text != _confirmPasswordController.text) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Passwords do not match.')),
+      );
+      return;
+    }
+
+    setState(() => _isLoading = true);
+    final result = await _authService.signUpWithEmailAndPassword(
+      _emailController.text.trim(),
+      _passwordController.text.trim(),
+    );
+    
+    // After sign up, the AuthGate will see the new user and navigate automatically.
+    // We just pop the screen so the user can't go back to the sign-up page.
+    if (result != null && mounted) {
+      Navigator.of(context).pop();
+    } else if (mounted) {
+       ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Sign up failed. Please try again.')),
+      );
+    }
+
+    if (mounted) {
+      setState(() => _isLoading = false);
+    }
   }
 
   @override
@@ -79,17 +111,15 @@ class _SignUpScreenState extends State<SignUpScreen> {
               const SizedBox(height: 32),
 
               ElevatedButton(
-                onPressed: () {
-                  /* Sign Up logic will go here */
-                },
+                 onPressed: _isLoading ? null : _signUp, // Call the sign-up function
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppTheme.primaryAccent,
                   padding: const EdgeInsets.symmetric(vertical: 16),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(14),
-                  ),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                 ),
-                child: const Text(
+                child: _isLoading
+                    ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                    : const Text(
                   'Sign Up',
                   style: TextStyle(
                     color: AppTheme.textHeadings,
