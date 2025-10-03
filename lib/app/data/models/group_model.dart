@@ -6,7 +6,7 @@ class Group {
 
   Group({required this.id, required this.name, required this.memberUids});
 
-  // Factory constructor to create a Group from a Firestore document
+  // A factory constructor to create a Group object from a Firestore document
   factory Group.fromFirestore(Map<String, dynamic> data, String documentId) {
     return Group(
       id: documentId,

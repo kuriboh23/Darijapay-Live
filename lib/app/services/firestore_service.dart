@@ -1,5 +1,6 @@
 // lib/app/services/firestore_service.dart
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:darijapay_live/app/data/models/expense_model.dart';
 import 'package:darijapay_live/app/data/models/group_model.dart';
 import 'package:darijapay_live/app/services/auth_service.dart';
 
@@ -35,4 +36,44 @@ class FirestoreService {
       'createdAt': Timestamp.now(),
     });
   }
+
+  // Get a live stream of expenses for a specific group
+Stream<List<Expense>> getExpensesStream(String groupId) {
+  return _db
+      .collection('groups')
+      .doc(groupId)
+      .collection('expenses')
+      .orderBy('timestamp', descending: true) // Show newest first
+      .snapshots()
+      .map((snapshot) => snapshot.docs
+          .map((doc) => Expense.fromFirestore(doc.data(), doc.id))
+          .toList());
+}
+
+// Add a new expense to a group's sub-collection
+Future<void> addExpenseToGroup({
+  required String groupId,
+  required String description,
+  required double amount,
+}) async {
+  final user = _authService.currentUser;
+  if (user == null) return;
+
+  // For now, we'll assume the current user paid and it's for everyone in the group.
+  // We will make this logic much more powerful later.
+  final groupDoc = await _db.collection('groups').doc(groupId).get();
+  final memberUids = List<String>.from(groupDoc.data()?['memberUids'] ?? []);
+
+  await _db
+      .collection('groups')
+      .doc(groupId)
+      .collection('expenses')
+      .add({
+    'description': description,
+    'amount': amount,
+    'payerUid': user.uid,
+    'participantUids': memberUids, // Simple logic for now
+    'timestamp': Timestamp.now(),
+  });
+}
 }
