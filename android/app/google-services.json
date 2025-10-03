@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "404407111707",
+    "project_id": "darijapay-live",
+    "storage_bucket": "darijapay-live.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:404407111707:android:444d52b350676fbb3ce8be",
+        "android_client_info": {
+          "package_name": "com.example.darija_pay"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCgThE72Vt4o0Naap2wkgQ8RHxJOdbNzkk"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:404407111707:android:c4bfe30317fa29633ce8be",
+        "android_client_info": {
+          "package_name": "com.example.darijapay_live"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCgThE72Vt4o0Naap2wkgQ8RHxJOdbNzkk"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
