@@ -2,6 +2,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:darijapay_live/app/data/models/expense_model.dart';
 import 'package:darijapay_live/app/data/models/group_model.dart';
+import 'package:darijapay_live/app/data/models/user_model.dart';
 import 'package:darijapay_live/app/services/auth_service.dart';
 
 class FirestoreService {
@@ -76,4 +77,12 @@ Future<void> addExpenseToGroup({
     'timestamp': Timestamp.now(),
   });
 }
+
+// Get a list of user profiles from a list of UIDs
+Future<List<AppUser>> getUserProfiles(List<String> uids) async {
+  if (uids.isEmpty) return [];
+  final userDocs = await _db.collection('users').where(FieldPath.documentId, whereIn: uids).get();
+  return userDocs.docs.map((doc) => AppUser.fromFirestore(doc.data(), doc.id)).toList();
+}
+
 }
