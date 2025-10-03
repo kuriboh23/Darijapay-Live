@@ -1,5 +1,6 @@
 // lib/main.dart
 import 'package:darijapay_live/app/config/theme.dart';
+import 'package:darijapay_live/app/presentation/screens/auth_gate.dart'; // NEW
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'firebase_options.dart';
@@ -20,11 +21,7 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       title: 'DarijaPay Live',
       theme: AppTheme.themeData,
-      home: Scaffold( // Temporary placeholder screen
-        body: Center(
-          child: Text('Setup Complete!', style: TextStyle(color: AppTheme.textHeadings)),
-        ),
-      ),
+      home: const AuthGate(), // Changed from Scaffold to AuthGate
       debugShowCheckedModeBanner: false,
     );
   }
