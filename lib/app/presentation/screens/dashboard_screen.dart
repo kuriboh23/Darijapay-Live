@@ -56,69 +56,77 @@ class _DashboardScreenState extends State<DashboardScreen> {
       body: StreamBuilder<List<Group>>(
         stream: _firestoreService.getGroupsStream(),
         builder: (context, groupSnapshot) {
-          if (groupSnapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
-          }
-          if (!groupSnapshot.hasData || groupSnapshot.data!.isEmpty) {
-            return const Center(child: Text("No groups yet. Tap + to create one."));
-          }
-          final groups = groupSnapshot.data!;
+        if (groupSnapshot.connectionState == ConnectionState.waiting) {
+          return const Center(child: CircularProgressIndicator());
+        }
+        
+        final groups = groupSnapshot.data ?? [];
+        // Fetch all expenses for all groups to calculate overall balance
+        return FutureBuilder<List<Expense>>(
+          future: _fetchAllExpenses(groups),
+          builder: (context, expenseSnapshot) {
+            if (expenseSnapshot.connectionState == ConnectionState.waiting) {
+              return const Center(child: CircularProgressIndicator());
+            }
+            final allExpenses = expenseSnapshot.data ?? [];
+        final overallBalances = _debtCalculator.calculateBalances(allExpenses);
+        
+        double totalOwedToUser = 0;
+        double totalOwedByUser = 0;
+        final currentUserBalance = overallBalances[currentUserId] ?? 0.0;
+        if (currentUserBalance > 0) totalOwedToUser = currentUserBalance;
+        else totalOwedByUser = currentUserBalance.abs();
 
-          // Now that we have groups, use a FutureBuilder to fetch all their expenses
-          return FutureBuilder<List<Expense>>(
-            future: _fetchAllExpenses(groups),
-            builder: (context, expenseSnapshot) {
-              if (expenseSnapshot.connectionState == ConnectionState.waiting) {
-                return const Center(child: CircularProgressIndicator()); // Show loading while expenses are fetched
-              }
-              
-              final allExpenses = expenseSnapshot.data ?? [];
-              final balances = _debtCalculator.calculateBalances(allExpenses);
-              
-              double totalOwedToUser = 0;
-              double totalOwedByUser = 0;
+        // This is a simplified calculation for the overall card.
+        // A more accurate way is to sum positive and negative balances separately.
+        overallBalances.forEach((uid, balance) {
+          if (balance > 0) totalOwedToUser += balance;
+          else totalOwedByUser += balance.abs();
+        });
+        totalOwedToUser = overallBalances.values.where((v) => v > 0).fold(0, (a, b) => a + b);
+        final userSpecificTotalBalance = overallBalances[currentUserId] ?? 0.0;
 
-              balances.forEach((uid, balance) {
-                if (uid == currentUserId) {
-                  if (balance > 0) totalOwedToUser += balance;
-                  else totalOwedByUser += balance.abs();
-                }
-              });
 
-              return ListView(
-                padding: const EdgeInsets.only(top: 20, bottom: 80),
-                children: [
-                  OverallBalanceCard(
-                    totalBalance: totalOwedToUser - totalOwedByUser,
-                    totalYouAreOwed: totalOwedToUser,
-                    totalYouOwe: totalOwedByUser,
-                  ),
-                  const SizedBox(height: 32),
-                  const Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 16.0),
-                    child: Text('Your Groups', style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
-                  ),
-                  const SizedBox(height: 10),
-                  ...groups.map((group) {
-                    // We will upgrade the GroupCard to show balances next
-                    return GestureDetector(
-                      onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => GroupDetailsScreen(group: group,firestoreService: FirestoreService(),))),
-                      child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-                    child: GlassmorphicContainer(
-                      width: screenWidth,
-                      height: 100,
-                      child: Center(
-                        child: Text(group.name, style: const TextStyle(color: AppTheme.textHeadings, fontSize: 20)),
-                      ),
+        return ListView(
+          padding: const EdgeInsets.only(top: 20, bottom: 80),
+          children: [
+            OverallBalanceCard(
+              totalBalance: userSpecificTotalBalance,
+              totalYouAreOwed: userSpecificTotalBalance > 0 ? userSpecificTotalBalance : 0,
+              totalYouOwe: userSpecificTotalBalance < 0 ? userSpecificTotalBalance.abs() : 0,
+            ),
+            const SizedBox(height: 32),
+            const Padding(
+              padding: EdgeInsets.symmetric(horizontal: 16.0),
+              child: Text('Your Groups', style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
+            ),
+            const SizedBox(height: 10),
+            ...groups.map((group) {
+              // Re-fetch and calculate for each group individually
+              return StreamBuilder<List<Expense>>(
+                stream: _firestoreService.getExpensesStream(group.id),
+                builder: (context, groupExpenseSnapshot) {
+                  if (!groupExpenseSnapshot.hasData) {
+                    return const SizedBox.shrink(); // Or a shimmer loader
+                  }
+                  final groupExpenses = groupExpenseSnapshot.data!;
+                  final groupBalances = _debtCalculator.calculateBalances(groupExpenses);
+                  final userBalanceInGroup = groupBalances[currentUserId] ?? 0.0;
+                  
+                  return GestureDetector(
+                    onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => GroupDetailsScreen(group: group,firestoreService: FirestoreService(),))),
+                    child: GroupCard(
+                      groupName: group.name,
+                      userBalance: userBalanceInGroup,
                     ),
-                  ),
-                );
-                  }).toList(),
-                ],
+                  );
+                },
               );
-            },
-          );
+            }).toList(),
+          ],
+        );
+      },
+      );  
         },
       ),
       floatingActionButton: FloatingActionButton(
