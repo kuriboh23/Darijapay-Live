@@ -1,4 +1,4 @@
-// lib/app/data/models/expense_model.dart
+// lib/app/data/models/expense_model.dart (CORRECTED)
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 class Expense {
@@ -6,7 +6,6 @@ class Expense {
   final String description;
   final double amount;
   final String payerUid;
-  final String payerDisplayName;
   final List<String> participantUids;
   final Timestamp timestamp;
 
@@ -15,7 +14,6 @@ class Expense {
     required this.description,
     required this.amount,
     required this.payerUid,
-    required this.payerDisplayName,
     required this.participantUids,
     required this.timestamp,
   });
@@ -28,7 +26,6 @@ class Expense {
       payerUid: data['payerUid'] ?? '',
       participantUids: List<String>.from(data['participantUids'] ?? []),
       timestamp: data['timestamp'] ?? Timestamp.now(),
-      payerDisplayName: '',
     );
   }
 }

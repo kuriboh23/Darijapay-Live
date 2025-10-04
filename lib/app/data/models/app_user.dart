@@ -1,4 +1,4 @@
-// lib/app/data/models/user_model.dart
+// lib/app/data/models/app_user.dart
 class AppUser {
   final String uid;
   final String email;
@@ -10,7 +10,7 @@ class AppUser {
     return AppUser(
       uid: documentId,
       email: data['email'] ?? '',
-      displayName: data['displayName'] ?? '',
+      displayName: data['displayName'] ?? 'No Name',
     );
   }
 }

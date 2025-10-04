@@ -6,7 +6,8 @@ import 'package:intl/intl.dart'; // Import for DateFormat
 
 class ExpenseCard extends StatelessWidget {
   final Expense expense;
-  const ExpenseCard({super.key, required this.expense});
+  final String payerDisplayName;
+  const ExpenseCard({super.key, required this.expense, required this.payerDisplayName});
 
   @override
   Widget build(BuildContext context) {
@@ -31,7 +32,7 @@ class ExpenseCard extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Paid by ${expense.payerDisplayName}',
+                      'Paid by $payerDisplayName',
                       style: const TextStyle(color: AppTheme.textBody, fontSize: 14),
                     ),
                     const SizedBox(height: 4),

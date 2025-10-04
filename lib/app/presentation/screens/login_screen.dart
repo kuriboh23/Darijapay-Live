@@ -1,11 +1,13 @@
 // lib/app/presentation/screens/login_screen.dart
 import 'package:darijapay_live/app/config/theme.dart';
-import 'package:darijapay_live/app/presentation/screens/signup_screen.dart'; // Will create soon
+import 'package:darijapay_live/app/presentation/screens/signup_screen.dart';
+import 'package:darijapay_live/app/presentation/widgets/custom_text_field.dart';
 import 'package:darijapay_live/app/services/auth_service.dart';
 import 'package:flutter/material.dart';
 
 class LoginScreen extends StatefulWidget {
-  const LoginScreen({super.key});
+  final AuthService authService;
+  const LoginScreen({super.key, required this.authService});
 
   @override
   State<LoginScreen> createState() => _LoginScreenState();
@@ -15,7 +17,7 @@ class _LoginScreenState extends State<LoginScreen> {
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
 
-  final AuthService _authService = AuthService(); // Create an instance
+  late final AuthService _authService = widget.authService;
   bool _isLoading = false;
 
   @override
@@ -25,7 +27,7 @@ class _LoginScreenState extends State<LoginScreen> {
     super.dispose();
   }
 
-   // --- LOGIN LOGIC ---
+  // --- LOGIN LOGIC ---
   void _login() async {
     setState(() => _isLoading = true);
     final result = await _authService.signInWithEmailAndPassword(
@@ -36,7 +38,9 @@ class _LoginScreenState extends State<LoginScreen> {
     // Handle login failure
     if (result == null && mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Login failed. Please check your credentials.')),
+        const SnackBar(
+          content: Text('Login failed. Please check your credentials.'),
+        ),
       );
     }
     // The AuthGate will handle navigation on success.
@@ -75,13 +79,13 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
                 const SizedBox(height: 30),
 
-                _buildTextField(
+                CustomTextField(
                   controller: _emailController,
                   hintText: 'Email',
                   keyboardType: TextInputType.emailAddress,
                 ),
                 const SizedBox(height: 16),
-                _buildTextField(
+                CustomTextField(
                   controller: _passwordController,
                   hintText: 'Password',
                   obscureText: true,
@@ -89,29 +93,41 @@ class _LoginScreenState extends State<LoginScreen> {
                 const SizedBox(height: 26),
 
                 ElevatedButton(
-                  onPressed: _isLoading ? null : _login, // Call the login function
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppTheme.primaryAccent,
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                ),
-                child: _isLoading
-                    ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                    : const Text(
-                    'Login',
-                    style: TextStyle(
-                      color: AppTheme.textHeadings,
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
+                  onPressed: _isLoading
+                      ? null
+                      : _login, // Call the login function
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppTheme.primaryAccent,
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
                     ),
                   ),
+                  child: _isLoading
+                      ? const SizedBox(
+                          height: 20,
+                          width: 20,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Colors.white,
+                          ),
+                        )
+                      : const Text(
+                          'Login',
+                          style: TextStyle(
+                            color: AppTheme.textHeadings,
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
                 ),
                 const SizedBox(height: 6),
                 TextButton(
                   onPressed: () => Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (context) => const SignUpScreen(),
+                      builder: (context) =>
+                          SignUpScreen(authService: _authService),
                     ),
                   ),
                   child: const Text(
@@ -122,30 +138,6 @@ class _LoginScreenState extends State<LoginScreen> {
               ],
             ),
           ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildTextField({
-    required TextEditingController controller,
-    required String hintText,
-    bool obscureText = false,
-    TextInputType? keyboardType,
-  }) {
-    return TextField(
-      controller: controller,
-      obscureText: obscureText,
-      keyboardType: keyboardType,
-      style: const TextStyle(color: AppTheme.textHeadings, fontSize: 16),
-      decoration: InputDecoration(
-        hintText: hintText,
-        hintStyle: const TextStyle(color: AppTheme.textBody),
-        filled: true,
-        fillColor: Colors.white.withOpacity(0.1),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(14),
-          borderSide: BorderSide.none,
         ),
       ),
     );

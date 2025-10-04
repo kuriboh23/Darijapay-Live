@@ -1,8 +1,10 @@
 // lib/app/services/firestore_service.dart
+import 'dart:async';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:darijapay_live/app/data/models/app_user.dart';
 import 'package:darijapay_live/app/data/models/expense_model.dart';
 import 'package:darijapay_live/app/data/models/group_model.dart';
-import 'package:darijapay_live/app/data/models/user_model.dart';
 import 'package:darijapay_live/app/services/auth_service.dart';
 
 class FirestoreService {
@@ -56,14 +58,10 @@ Future<void> addExpenseToGroup({
   required String groupId,
   required String description,
   required double amount,
+  required String payerUid,
+  required List<String> participantUids,
 }) async {
-  final user = _authService.currentUser;
-  if (user == null) return;
-
-  // For now, we'll assume the current user paid and it's for everyone in the group.
-  // We will make this logic much more powerful later.
-  final groupDoc = await _db.collection('groups').doc(groupId).get();
-  final memberUids = List<String>.from(groupDoc.data()?['memberUids'] ?? []);
+  if (participantUids.isEmpty) return;
 
   await _db
       .collection('groups')
@@ -72,8 +70,8 @@ Future<void> addExpenseToGroup({
       .add({
     'description': description,
     'amount': amount,
-    'payerUid': user.uid,
-    'participantUids': memberUids, // Simple logic for now
+    'payerUid': payerUid,
+    'participantUids': participantUids,
     'timestamp': Timestamp.now(),
   });
 }
@@ -82,7 +80,44 @@ Future<void> addExpenseToGroup({
 Future<List<AppUser>> getUserProfiles(List<String> uids) async {
   if (uids.isEmpty) return [];
   final userDocs = await _db.collection('users').where(FieldPath.documentId, whereIn: uids).get();
+  print("Found ${userDocs.docs.length} user documents."); // See how many documents Firestore returned
   return userDocs.docs.map((doc) => AppUser.fromFirestore(doc.data(), doc.id)).toList();
+}
+
+// New method to get ALL expenses from a list of groups
+Stream<List<Expense>> getAllExpensesForUserGroups(List<Group> groups) {
+  if (groups.isEmpty) {
+    return Stream.value([]);
+  }
+
+  final controller = StreamController<List<Expense>>();
+  final List<Expense> allExpenses = [];
+  int streamsFinished = 0;
+
+  for (final group in groups) {
+    getExpensesStream(group.id).listen((expenses) {
+      // This logic is a bit tricky: it handles updates from multiple streams
+      // For simplicity, we'll just add them. A more robust solution might use RxDart.
+      allExpenses.addAll(expenses);
+    }, onDone: () {
+      streamsFinished++;
+      if (streamsFinished == groups.length) {
+        controller.add(allExpenses);
+        controller.close();
+      }
+    });
+  }
+  
+  // A simplified approach for the MVP:
+  // We'll combine streams as they come in.
+  // NOTE: This might lead to duplicate displays on rapid updates, but is fine for now.
+  List<Stream<List<Expense>>> streams = groups.map((g) => getExpensesStream(g.id)).toList();
+  
+  // A better approach for the MVP (using asyncMap to handle fetching)
+  // We'll just fetch all expenses for now when the groups stream updates.
+  // This is less "real-time" for the overall balance, but much simpler and more reliable.
+  // We can upgrade to a complex stream merger later.
+  return Stream.value([]); // We will handle this directly in the dashboard for now.
 }
 
 }

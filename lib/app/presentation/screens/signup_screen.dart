@@ -1,10 +1,12 @@
 // lib/app/presentation/screens/signup_screen.dart
 import 'package:darijapay_live/app/config/theme.dart';
+import 'package:darijapay_live/app/presentation/widgets/custom_text_field.dart';
 import 'package:darijapay_live/app/services/auth_service.dart';
 import 'package:flutter/material.dart';
 
 class SignUpScreen extends StatefulWidget {
-  const SignUpScreen({super.key});
+  final AuthService authService;
+  const SignUpScreen({super.key, required this.authService});
 
   @override
   State<SignUpScreen> createState() => _SignUpScreenState();
@@ -13,8 +15,9 @@ class SignUpScreen extends StatefulWidget {
 class _SignUpScreenState extends State<SignUpScreen> {
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
-  final TextEditingController _confirmPasswordController = TextEditingController();
-  final AuthService _authService = AuthService(); // Create an instance
+  final TextEditingController _confirmPasswordController =
+      TextEditingController();
+  late final AuthService _authService = widget.authService;
   bool _isLoading = false;
 
   @override
@@ -25,12 +28,12 @@ class _SignUpScreenState extends State<SignUpScreen> {
     super.dispose();
   }
 
-   // --- SIGN UP LOGIC ---
+  // --- SIGN UP LOGIC ---
   void _signUp() async {
     if (_passwordController.text != _confirmPasswordController.text) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Passwords do not match.')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Passwords do not match.')));
       return;
     }
 
@@ -39,13 +42,13 @@ class _SignUpScreenState extends State<SignUpScreen> {
       _emailController.text.trim(),
       _passwordController.text.trim(),
     );
-    
+
     // After sign up, the AuthGate will see the new user and navigate automatically.
     // We just pop the screen so the user can't go back to the sign-up page.
     if (result != null && mounted) {
       Navigator.of(context).pop();
     } else if (mounted) {
-       ScaffoldMessenger.of(context).showSnackBar(
+      ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Sign up failed. Please try again.')),
       );
     }
@@ -91,19 +94,19 @@ class _SignUpScreenState extends State<SignUpScreen> {
               ),
               const SizedBox(height: 30),
 
-              _buildTextField(
+              CustomTextField(
                 controller: _emailController,
                 hintText: 'Email',
                 keyboardType: TextInputType.emailAddress,
               ),
               const SizedBox(height: 16),
-              _buildTextField(
+              CustomTextField(
                 controller: _passwordController,
                 hintText: 'Password',
                 obscureText: true,
               ),
               const SizedBox(height: 16),
-              _buildTextField(
+              CustomTextField(
                 controller: _confirmPasswordController,
                 hintText: 'Confirm Password',
                 obscureText: true,
@@ -111,50 +114,37 @@ class _SignUpScreenState extends State<SignUpScreen> {
               const SizedBox(height: 32),
 
               ElevatedButton(
-                 onPressed: _isLoading ? null : _signUp, // Call the sign-up function
+                onPressed: _isLoading
+                    ? null
+                    : _signUp, // Call the sign-up function
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppTheme.primaryAccent,
                   padding: const EdgeInsets.symmetric(vertical: 16),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                ),
-                child: _isLoading
-                    ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                    : const Text(
-                  'Sign Up',
-                  style: TextStyle(
-                    color: AppTheme.textHeadings,
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
                   ),
                 ),
+                child: _isLoading
+                    ? const SizedBox(
+                        height: 20,
+                        width: 20,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: Colors.white,
+                        ),
+                      )
+                    : const Text(
+                        'Sign Up',
+                        style: TextStyle(
+                          color: AppTheme.textHeadings,
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
               ),
               SizedBox(height: 30),
             ],
           ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildTextField({
-    required TextEditingController controller,
-    required String hintText,
-    bool obscureText = false,
-    TextInputType? keyboardType,
-  }) {
-    return TextField(
-      controller: controller,
-      obscureText: obscureText,
-      keyboardType: keyboardType,
-      style: const TextStyle(color: AppTheme.textHeadings, fontSize: 16),
-      decoration: InputDecoration(
-        hintText: hintText,
-        hintStyle: const TextStyle(color: AppTheme.textBody),
-        filled: true,
-        fillColor: Colors.white.withOpacity(0.1),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(14),
-          borderSide: BorderSide.none,
         ),
       ),
     );
